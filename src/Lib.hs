@@ -1,16 +1,16 @@
 module Lib
     ( someFunc,
     Pitch,
---    toPitch,
+    toPitch,
     feedback,
-    test
---    GameState,
+    test,
+    GameState
 --    initialGuess,
 --    nextGuess
     ) where
 
 import Data.List
---toPitch :: String -> Maybe Pitch
+toPitch :: String -> Maybe Pitch
 feedback ::[Pitch] -> [Pitch] -> (Int,Int,Int)
 --initialGuess :: ([Pitch],GameState)
 --nextGuess :: ([Pitch],GameState) -> (Int,Int,Int) -> ([Pitch],GameState)
@@ -23,7 +23,33 @@ data Octave = O1 | O2 | O3 | O4 | O5
 data Pitch = Pitch Note Octave
   deriving (Show,Eq)
 
+data Stage = Stage1 | Stage2
 
+data GameState = GameState {
+  currentStage :: Int,
+  stage1 :: [Note],
+  stage2 :: [Note],
+  foundNotes :: [Note]
+}
+
+
+
+--initialGuess =
+--  ()
+
+toPitch pitchString
+    | (length pitchString /= 2) = Nothing
+    | otherwise = Just (Pitch (getNoteFromChar (pitchString !! 0)) (getOctaveFromChar (pitchString !! 1)))
+--    todo handle bad characters
+
+getNoteFromChar char
+    | char == 'A' = A
+    | char == 'B' = A
+
+getOctaveFromChar char
+  | char == '1' = O1
+  | char == '2' = O2
+  | char == '3' = O3
 
 feedback (x:xs) (x1:xs1) =
   feedback_helper (x:xs) (x1:xs1) (0,0,0)
@@ -65,9 +91,10 @@ getOctaves ((Pitch note octave):xs) =
 
 test =
 --  feedback [(Pitch A One)] [(Pitch B Two)]
-   feedback ( [(Pitch C O2),(Pitch B O1),(Pitch A O3),(Pitch A O1)]) ([(Pitch A O1),(Pitch D O1),(Pitch C O5),(Pitch A O3)])
+--   feedback ( [(Pitch C O2),(Pitch B O1),(Pitch A O3),(Pitch A O1)]) ([(Pitch A O1),(Pitch D O1),(Pitch C O5),(Pitch A O3)])
 --    foldl1 Data.List.intersect [[C,D,C], [D,C,C]]
 --    getNotes [(Pitch C O2),(Pitch B O1),(Pitch A O3),(Pitch A O1)]
+    toPitch "R1"
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
