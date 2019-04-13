@@ -6,14 +6,14 @@ module Lib
     test,
     GameState
 --    initialGuess,
---    nextGuess
+    nextGuess
     ) where
 
 import Data.List
 toPitch :: String -> Maybe Pitch
 feedback ::[Pitch] -> [Pitch] -> (Int,Int,Int)
 --initialGuess :: ([Pitch],GameState)
---nextGuess :: ([Pitch],GameState) -> (Int,Int,Int) -> ([Pitch],GameState)
+nextGuess :: ([Pitch],GameState) -> (Int,Int,Int) -> ([Pitch],GameState)
 
 data Note = A | B | C | D
   deriving (Show,Eq,Ord)
@@ -26,16 +26,48 @@ data Pitch = Pitch Note Octave
 data Stage = Stage1 | Stage2
 
 data GameState = GameState {
-  currentStage :: Int,
-  stage1 :: [Note],
-  stage2 :: [Note],
+  isInBatchTestStage :: Bool,
+  batchTestStage :: [Note],
+  singularTestStage :: [Note],
   foundNotes :: [Note]
+
 }
 
 
 
 --initialGuess =
 --  ()
+nextGuess (x:xs, beforeGameState) (correctPitches,correctNotes,correctOcts) =
+    getGuessForState (updateState (x:xs,beforeGameState)(correctPitches,correctNotes,correctOcts))
+
+
+updateState (x:xs, gameState) (correctPitches,correctNotes,correctOcts)=
+  if gameState->isInBatchTestStage
+  then
+    if (correctPitches==0 && correctNotes==0)
+    then -- update state -> remove notes from batch array, if empty batch array change stage
+    else -- update state -> remove notes from batch array and add to singular stage, if empty batch array change stage
+  else
+    if (correctPitches ==0 && correctNotes ==0 )
+    then -- remove from singular array
+    else -- remove from singular array add to found notes
+getGuessForState gameState =
+  if gameState->isInBatchTestStage
+  then
+    if length(gameState->batchTestStage) == 1
+    then (Pitch batchTestStage!!0 1,Pitch batchTestStage!!0 1,Pitch batchTestStage!!0 1)
+    else (Pitch batchTestStage!!0 1,Pitch batchTestStage!!1 1,Pitch batchTestStage!!0 1)
+  else
+    (Pitch singularTestStage!!0 1,Pitch singularTestStage!!0 1,Pitch singularTestStage!!0 1)
+
+
+
+
+
+
+
+
+
 
 toPitch pitchString
     | (length pitchString /= 2) = Nothing
