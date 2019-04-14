@@ -11,12 +11,13 @@ module Lib
     ) where
 
 import Data.List
+
 toPitch :: String -> Maybe Pitch
 feedback ::[Pitch] -> [Pitch] -> (Int,Int,Int)
 --initialGuess :: ([Pitch],GameState)
 --nextGuess :: ([Pitch],GameState) -> (Int,Int,Int) -> ([Pitch],GameState)
 
-data Note = A | B | C | D
+data Note = A | B | C | D | E | F | G
   deriving (Show,Eq,Ord)
 data Octave = O1 | O2 | O3 | O4 | O5
   deriving (Show,Eq,Ord)
@@ -34,16 +35,12 @@ data GameState = GameState {
 } deriving (Show)
 
 
-test =
---  feedback [(Pitch A One)] [(Pitch B Two)]
---   feedback ( [(Pitch C O2),(Pitch B O1),(Pitch A O3),(Pitch A O1)]) ([(Pitch A O1),(Pitch D O1),(Pitch C O5),(Pitch A O3)])
---    foldl1 Data.List.intersect [[C,D,C], [D,C,C]]
---    getNotes [(Pitch C O2),(Pitch B O1),(Pitch A O3),(Pitch A O1)]
---    toPitch "R1"
---    isInBatchTestStage (GameState True [] [] [])
-  getGuessForState(GameState False [A] [B,C,D] [])
---  addElementThisTimes (Pitch A O2) [Pitch B O3] 10
 
+filterArray array notes = --tested
+  filter (\(Pitch note oct) -> (elem note notes)) array
+
+filterNotes array notes =
+  filter (\note -> not(elem note notes)) array
 
 
 --initialGuess =
@@ -55,27 +52,41 @@ test =
 --      getGuessForState (updateState (x:xs,beforeGameState)(correctPitches,correctNotes,correctOcts))
 --
 --
+
+
+
+test =
+--  feedback [(Pitch A One)] [(Pitch B Two)]
+--   feedback ( [(Pitch C O2),(Pitch B O1),(Pitch A O3),(Pitch A O1)]) ([(Pitch A O1),(Pitch D O1),(Pitch C O5),(Pitch A O3)])
+--    foldl1 Data.List.intersect [[C,D,C], [D,C,C]]
+--    getNotes [(Pitch C O2),(Pitch B O1),(Pitch A O3),(Pitch A O1)]
+--    toPitch "R1"
+--    isInBatchTestStage (GameState True [] [] [])
+--  getGuessForState(GameState False [A] [B,C,D] [])
+--  addElementThisTimes (Pitch A O2) [Pitch B O3] 10
+--    filterArray [Pitch A O1,Pitch C O2,Pitch B O1, Pitch A O3] [A,B]
+--  filterNotes [A,B,C] [A,B]
+  updateState ([Pitch B O1,Pitch B O1,Pitch B O1],GameState False [] [B,C] []) (1,1,0)
+
+
 updateState (x:xs, gameState) (correctPitches,correctNotes,correctOcts)=
   if isInBatchTestStage gameState
   then
     if (correctPitches==0 && correctNotes==0)
     then -- update state -> remove notes from batch array, if empty batch array change stage
-      let newArr = filterArray (batchTestStage gameState)(getNotes x:xs) in
+      let newArr = filterNotes (batchTestStage gameState) (getNotes (x:xs)) in
         if length newArr == 0
         then (GameState False newArr (singularTestStage gameState) (foundNotes gameState))
         else (GameState True newArr (singularTestStage gameState) (foundNotes gameState))
-
     else -- update state -> remove notes from batch array and add to singular stage, if empty batch array change stage
-      let newArr = filterArray (batchTestStage gameState)(getNotes x:xs) in
+      let newArr = filterNotes (batchTestStage gameState)(getNotes (x:xs)) in
         if length newArr == 0
-        then (GameState False [] (getNotes x:xs)++singularTestStage (foundNotes gameState))
-        else (GameState True [] (getNotes x:xs)++singularTestStage (foundNotes gameState))
-
+        then (GameState False [] (nub((getNotes (x:xs))++(singularTestStage gameState))) (foundNotes gameState))
+        else (GameState True newArr (nub((getNotes (x:xs))++(singularTestStage gameState))) (foundNotes gameState))
   else
     if (correctPitches ==0 && correctNotes ==0 )
-    then GameState True [] (filterArray (singularTestStage gameState) (getNotes x:xs)) (foundNotes gameState) -- remove from singular array
-    else GameState True [] (filterArray (singularTestStage gameState) (getNotes x:xs)) addElementThisTimes (Note x)
-    (foundNotes gameState) (correctNotes+correctPitches)-- remove from singular array add to found notes
+    then GameState True [] (filterNotes (singularTestStage gameState) (getNotes (x:xs))) (foundNotes gameState) -- remove from singular array
+    else GameState True [] (filterNotes (singularTestStage gameState) (getNotes (x:xs))) (addElementThisTimes (getNotes(x:xs)!!0) (foundNotes gameState) (correctNotes+correctPitches))-- remove from singular array add to found notes
 
 getGuessForState gameState =
     if  (isInBatchTestStage gameState)
@@ -87,8 +98,6 @@ getGuessForState gameState =
     (Pitch (singularTestStage gameState!!0) O1,Pitch (singularTestStage gameState!!0) O1,Pitch (singularTestStage gameState!!0) O1)
 
 
-filterArray array notes =
-  filter (\(Pitch note oct) -> (elem note notes)) array
 
 
 
@@ -151,6 +160,9 @@ getNotes [] =
   []
 getNotes ((Pitch note octave):xs) =
   note:(getNotes xs)
+
+--getNotesFromFeedback (feedbackPitches,feedbackNotes,feedbackOcts)=
+
 
 getOctaves [] =
   []
