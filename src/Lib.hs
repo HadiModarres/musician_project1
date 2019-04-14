@@ -4,22 +4,22 @@ module Lib
     toPitch,
     feedback,
     test,
-    GameState
+    GameState,
 --    getNotes,
---    initialGuess,
---    nextGuess
+    initialGuess,
+    nextGuess
     ) where
 
 import Data.List
 
 toPitch :: String -> Maybe Pitch
 feedback ::[Pitch] -> [Pitch] -> (Int,Int,Int)
---initialGuess :: ([Pitch],GameState)
---nextGuess :: ([Pitch],GameState) -> (Int,Int,Int) -> ([Pitch],GameState)
+initialGuess :: ([Pitch],GameState)
+nextGuess :: ([Pitch],GameState) -> (Int,Int,Int) -> ([Pitch],GameState)
 
 data Note = A | B | C | D | E | F | G
   deriving (Show,Eq,Ord)
-data Octave = O1 | O2 | O3 | O4 | O5
+data Octave = O1 | O2 | O3
   deriving (Show,Eq,Ord)
 
 data Pitch = Pitch Note Octave
@@ -31,7 +31,10 @@ data GameState = GameState {
   isInBatchTestStage :: Bool,
   batchTestStage :: [Note],
   singularTestStage :: [Note],
-  foundNotes :: [Note]
+  foundNotes :: [Note],
+  remainingOctaves :: [Octave],
+  foundOctaves :: [Octave],
+  octavePermutations :: [[Octave]]
 } deriving (Show)
 
 
@@ -43,20 +46,19 @@ filterNotes array notes =
   filter (\note -> not(elem note notes)) array
 
 
---initialGuess =
---  ()
---nextGuess (x:xs, beforeGameState) (correctPitches,correctNotes,correctOcts) =
---    if correctPitches == 3
---    then 1-- end todo
---    else
---      getGuessForState (updateState (x:xs,beforeGameState)(correctPitches,correctNotes,correctOcts))
---
---
+initialGuess =
+    ([Pitch A O1,Pitch B O1,Pitch A O1],GameState True [A,B,C,D,E,F,G] [] [] [O1,O2,O3] [] [])
+
+nextGuess (x:xs, beforeGameState) (correctPitches,correctNotes,correctOcts) =
+   getGuessForState (updateState (x:xs,beforeGameState)(correctPitches,correctNotes,correctOcts))
+
 
 
 
 test =
---  feedback [(Pitch A One)] [(Pitch B Two)]
+--    feedback [Pitch A O1,Pitch C O3,Pitch G O2] [Pitch A O1,Pitch B O1,Pitch A O1]
+--    nextGuess ([Pitch A O1,Pitch B O1,Pitch A O1],GameState True [A,B,C,D,E,F,G] [] [] [O1,O2,O3] []) (1,0,0)
+  permutations [O1,O1,O2]
 --   feedback ( [(Pitch C O2),(Pitch B O1),(Pitch A O3),(Pitch A O1)]) ([(Pitch A O1),(Pitch D O1),(Pitch C O5),(Pitch A O3)])
 --    foldl1 Data.List.intersect [[C,D,C], [D,C,C]]
 --    getNotes [(Pitch C O2),(Pitch B O1),(Pitch A O3),(Pitch A O1)]
@@ -66,37 +68,75 @@ test =
 --  addElementThisTimes (Pitch A O2) [Pitch B O3] 10
 --    filterArray [Pitch A O1,Pitch C O2,Pitch B O1, Pitch A O3] [A,B]
 --  filterNotes [A,B,C] [A,B]
-  updateState ([Pitch B O1,Pitch B O1,Pitch B O1],GameState False [] [B,C] []) (1,1,0)
-
+--  updateState ([Pitch B O1,Pitch B O1,Pitch B O1],GameState False [] [B,C] [] [O1,O2,O3] [O2,O2]) (0,0,3)
+--  getFromRemaingOctaves (GameState True [] [] [] [] [])
+--  addToListWithCap O1 [O2,O3,O3] 2 3
 
 updateState (x:xs, gameState) (correctPitches,correctNotes,correctOcts)=
-  if isInBatchTestStage gameState
-  then
-    if (correctPitches==0 && correctNotes==0)
-    then -- update state -> remove notes from batch array, if empty batch array change stage
-      let newArr = filterNotes (batchTestStage gameState) (getNotes (x:xs)) in
-        if length newArr == 0
-        then (GameState False newArr (singularTestStage gameState) (foundNotes gameState))
-        else (GameState True newArr (singularTestStage gameState) (foundNotes gameState))
-    else -- update state -> remove notes from batch array and add to singular stage, if empty batch array change stage
-      let newArr = filterNotes (batchTestStage gameState)(getNotes (x:xs)) in
-        if length newArr == 0
-        then (GameState False [] (nub((getNotes (x:xs))++(singularTestStage gameState))) (foundNotes gameState))
-        else (GameState True newArr (nub((getNotes (x:xs))++(singularTestStage gameState))) (foundNotes gameState))
+
+  if ((length (foundNotes gameState) == 3)&&(length (foundOctaves gameState) == 3))
+  then GameState (isInBatchTestStage gameState) (batchTestStage gameState) (singularTestStage gameState)
+                  (foundNotes gameState) (remainingOctaves gameState) (foundOctaves gameState) (permutations (foundOctaves gameState))
   else
-    if (correctPitches ==0 && correctNotes ==0 )
-    then GameState True [] (filterNotes (singularTestStage gameState) (getNotes (x:xs))) (foundNotes gameState) -- remove from singular array
-    else GameState True [] (filterNotes (singularTestStage gameState) (getNotes (x:xs))) (addElementThisTimes (getNotes(x:xs)!!0) (foundNotes gameState) (correctNotes+correctPitches))-- remove from singular array add to found notes
+      if isInBatchTestStage gameState
+      then
+        if (correctPitches==0 && correctNotes==0)
+        then -- update state -> remove notes from batch array, if empty batch array change stage
+          let newArr = filterNotes (batchTestStage gameState) (getNotes (x:xs)) in
+            if length newArr == 0
+            then (GameState False newArr (singularTestStage gameState) (foundNotes gameState) (remove (getOctaves(x:xs)!!0)
+                            (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) [])
+            else (GameState True newArr (singularTestStage gameState) (foundNotes gameState) (remove (getOctaves(x:xs)!!0)
+                            (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) [])
+        else -- update state -> remove notes from batch array and add to singular stage, if empty batch array change stage
+          let newArr = filterNotes (batchTestStage gameState)(getNotes (x:xs)) in
+            if length newArr == 0
+            then (GameState False [] (nub((getNotes (x:xs))++(singularTestStage gameState))) (foundNotes gameState) (remove (getOctaves(x:xs)!!0)
+                            (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) [])
+            else (GameState True newArr (nub((getNotes (x:xs))++(singularTestStage gameState))) (foundNotes gameState) (remove (getOctaves(x:xs)!!0)
+                            (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) [])
+      else
+        if (correctPitches ==0 && correctNotes ==0 )
+        then GameState True [] (filterNotes (singularTestStage gameState) (getNotes (x:xs))) (foundNotes gameState) (remove (getOctaves(x:xs)!!0)
+                            (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) []-- remove from singular array
+        else GameState True [] (filterNotes (singularTestStage gameState) (getNotes (x:xs))) (addElementThisTimes (getNotes(x:xs)!!0) (foundNotes gameState) (correctNotes+correctPitches)) (remove (getOctaves(x:xs)!!0)
+                            (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) []-- remove from singular array add to found notes
 
 getGuessForState gameState =
+  if ((length (foundNotes gameState) == 3)&&(length (foundOctaves gameState) == 3))
+  then
+    let x:xs = (octavePermutations gameState) in
+    ([Pitch ((foundNotes gameState)!!0) (x!!0),Pitch ((foundNotes gameState)!!0) (x!!1), Pitch ((foundNotes gameState)!!0) (x!!2)],
+    GameState (isInBatchTestStage gameState) (batchTestStage gameState) (singularTestStage gameState)
+                  (foundNotes gameState) (remainingOctaves gameState) (foundOctaves gameState) xs)
+  else
     if  (isInBatchTestStage gameState)
     then
       if length(batchTestStage gameState) == 1
-      then (Pitch (batchTestStage gameState!!0) O1,Pitch (batchTestStage gameState!!0) O1,Pitch (batchTestStage gameState!!0) O1)
-      else (Pitch (batchTestStage gameState!!0) O1,Pitch (batchTestStage gameState!!1) O1,Pitch (batchTestStage gameState!!0) O1)
+      then ([Pitch (batchTestStage gameState!!0) (getFromRemaingOctaves gameState),Pitch (batchTestStage gameState!!0)
+            (getFromRemaingOctaves gameState),Pitch (batchTestStage gameState!!0) (getFromRemaingOctaves gameState)],gameState)
+      else ([Pitch (batchTestStage gameState!!0) (getFromRemaingOctaves gameState),Pitch (batchTestStage gameState!!1)
+          (getFromRemaingOctaves gameState),Pitch (batchTestStage gameState!!0) (getFromRemaingOctaves gameState)],gameState)
     else
-    (Pitch (singularTestStage gameState!!0) O1,Pitch (singularTestStage gameState!!0) O1,Pitch (singularTestStage gameState!!0) O1)
+    ([Pitch (singularTestStage gameState!!0) (getFromRemaingOctaves gameState),Pitch (singularTestStage gameState!!0)
+      (getFromRemaingOctaves gameState),Pitch (singularTestStage gameState!!0) (getFromRemaingOctaves gameState)], gameState)
 
+getFromRemaingOctaves gameState =
+  if length(remainingOctaves gameState) == 0
+  then O1
+  else (remainingOctaves gameState)!!0
+
+
+
+remove element list = filter (\e -> e/=element) list
+
+
+addToListWithCap element list 0 cap =
+  list
+addToListWithCap element list count cap=
+  if length list >= cap
+  then list
+  else addToListWithCap element (element:list) (count-1) cap
 
 
 
