@@ -1,4 +1,4 @@
-module Lib
+module Proj1
     ( someFunc,
     Pitch,
     toPitch,
@@ -58,7 +58,7 @@ nextGuess (x:xs, beforeGameState) (correctPitches,correctNotes,correctOcts) =
 test =
 --    feedback [Pitch A O1,Pitch C O3,Pitch G O2] [Pitch A O1,Pitch B O1,Pitch A O1]
 --    nextGuess ([Pitch A O1,Pitch B O1,Pitch A O1],GameState True [A,B,C,D,E,F,G] [] [] [O1,O2,O3] []) (1,0,0)
-  permutations [O1,O1,O2]
+--  permutations [O1,O1,O2]
 --   feedback ( [(Pitch C O2),(Pitch B O1),(Pitch A O3),(Pitch A O1)]) ([(Pitch A O1),(Pitch D O1),(Pitch C O5),(Pitch A O3)])
 --    foldl1 Data.List.intersect [[C,D,C], [D,C,C]]
 --    getNotes [(Pitch C O2),(Pitch B O1),(Pitch A O3),(Pitch A O1)]
@@ -68,7 +68,7 @@ test =
 --  addElementThisTimes (Pitch A O2) [Pitch B O3] 10
 --    filterArray [Pitch A O1,Pitch C O2,Pitch B O1, Pitch A O3] [A,B]
 --  filterNotes [A,B,C] [A,B]
---  updateState ([Pitch B O1,Pitch B O1,Pitch B O1],GameState False [] [B,C] [] [O1,O2,O3] [O2,O2]) (0,0,3)
+  updateState ([Pitch B O1,Pitch B O1,Pitch B O1],GameState False [] [] [G,B,C] [] [O1,O3,O2] []) (0,3,3)
 --  getFromRemaingOctaves (GameState True [] [] [] [] [])
 --  addToListWithCap O1 [O2,O3,O3] 2 3
 
@@ -161,8 +161,12 @@ toPitch pitchString
 
 getNoteFromChar char
     | char == 'A' = A
-    | char == 'B' = A
-
+    | char == 'B' = B
+    | char == 'C' = C
+    | char == 'D' = D
+    | char == 'E' = E
+    | char == 'F' = F
+    | char == 'G' = G
 getOctaveFromChar char
   | char == '1' = O1
   | char == '2' = O2
