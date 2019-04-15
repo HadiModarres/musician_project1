@@ -38,6 +38,25 @@ data GameState = GameState {
 } deriving (Show)
 
 
+test =
+--    feedback [Pitch A O1,Pitch C O3,Pitch G O2] [Pitch A O1,Pitch B O1,Pitch A O1]
+--    nextGuess ([Pitch A O1,Pitch B O1,Pitch A O1],GameState True [A,B,C,D,E,F,G] [] [] [O1,O2,O3] []) (1,0,0)
+--  permutations [O1,O1,O2]
+   feedback ( [(Pitch B O2),(Pitch B O2),(Pitch B O2)]) ([(Pitch A O1),(Pitch B O1),(Pitch A O1)])
+--  inters (sort [B,B,B]) (sort[A,A,B]) 0
+
+--    inters [D,D,D] [C,D,C]  0
+--    getNotes [(Pitch C O2),(Pitch B O1),(Pitch A O3),(Pitch A O1)]
+--    toPitch "R1"
+--    isInBatchTestStage (GameState True [] [] [])
+--  getGuessForState(GameState True [B,G] [B,C,D] [] [] [O1,O1,O2] [[O1,O1,O2]])
+
+--  addElementThisTimes (Pitch A O2) [Pitch B O3] 10
+--    filterArray [Pitch A O1,Pitch C O2,Pitch B O1, Pitch A O3] [A,B]
+--  filterNotes [A,B,C] [A,B]
+--  updateState ([Pitch B O1,Pitch B O1,Pitch B O1],GameState False [] [A,B] [] [] [O1,O3,O2] []) (0,2,1)
+--  getFromRemaingOctaves (GameState True [] [] [] [] [])
+--  addToListWithCap O1 [O2,O3,O3] 2 3
 
 filterArray array notes = --tested
   filter (\(Pitch note oct) -> (elem note notes)) array
@@ -47,7 +66,7 @@ filterNotes array notes =
 
 
 initialGuess =
-    ([Pitch A O1,Pitch B O1,Pitch A O1],GameState True [A,B,C,D,E,F,G] [] [] [O1,O2,O3] [] [])
+    ([Pitch A O1,Pitch B O1,Pitch A O1],GameState True [A,B,C,D,E,F] [G] [] [O1,O2,O3] [] [])
 
 nextGuess (x:xs, beforeGameState) (correctPitches,correctNotes,correctOcts) =
    getGuessForState (updateState (x:xs,beforeGameState)(correctPitches,correctNotes,correctOcts))
@@ -55,22 +74,6 @@ nextGuess (x:xs, beforeGameState) (correctPitches,correctNotes,correctOcts) =
 
 
 
-test =
---    feedback [Pitch A O1,Pitch C O3,Pitch G O2] [Pitch A O1,Pitch B O1,Pitch A O1]
---    nextGuess ([Pitch A O1,Pitch B O1,Pitch A O1],GameState True [A,B,C,D,E,F,G] [] [] [O1,O2,O3] []) (1,0,0)
---  permutations [O1,O1,O2]
---   feedback ( [(Pitch C O2),(Pitch B O1),(Pitch A O3),(Pitch A O1)]) ([(Pitch A O1),(Pitch D O1),(Pitch C O5),(Pitch A O3)])
---    foldl1 Data.List.intersect [[C,D,C], [D,C,C]]
---    getNotes [(Pitch C O2),(Pitch B O1),(Pitch A O3),(Pitch A O1)]
---    toPitch "R1"
---    isInBatchTestStage (GameState True [] [] [])
---  getGuessForState(GameState False [A] [B,C,D] [])
---  addElementThisTimes (Pitch A O2) [Pitch B O3] 10
---    filterArray [Pitch A O1,Pitch C O2,Pitch B O1, Pitch A O3] [A,B]
---  filterNotes [A,B,C] [A,B]
-  updateState ([Pitch B O1,Pitch B O1,Pitch B O1],GameState False [] [] [G,B,C] [] [O1,O3,O2] []) (0,3,3)
---  getFromRemaingOctaves (GameState True [] [] [] [] [])
---  addToListWithCap O1 [O2,O3,O3] 2 3
 
 updateState (x:xs, gameState) (correctPitches,correctNotes,correctOcts)=
 
@@ -97,9 +100,9 @@ updateState (x:xs, gameState) (correctPitches,correctNotes,correctOcts)=
                             (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) [])
       else
         if (correctPitches ==0 && correctNotes ==0 )
-        then GameState True [] (filterNotes (singularTestStage gameState) (getNotes (x:xs))) (foundNotes gameState) (remove (getOctaves(x:xs)!!0)
+        then GameState False [] (filterNotes (singularTestStage gameState) (getNotes (x:xs))) (foundNotes gameState) (remove (getOctaves(x:xs)!!0)
                             (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) []-- remove from singular array
-        else GameState True [] (filterNotes (singularTestStage gameState) (getNotes (x:xs))) (addElementThisTimes (getNotes(x:xs)!!0) (foundNotes gameState) (correctNotes+correctPitches)) (remove (getOctaves(x:xs)!!0)
+        else GameState False [] (filterNotes (singularTestStage gameState) (getNotes (x:xs))) (addElementThisTimes (getNotes(x:xs)!!0) (foundNotes gameState) (correctNotes+correctPitches)) (remove (getOctaves(x:xs)!!0)
                             (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) []-- remove from singular array add to found notes
 
 getGuessForState gameState =
@@ -113,18 +116,18 @@ getGuessForState gameState =
     if  (isInBatchTestStage gameState)
     then
       if length(batchTestStage gameState) == 1
-      then ([Pitch (batchTestStage gameState!!0) (getFromRemaingOctaves gameState),Pitch (batchTestStage gameState!!0)
-            (getFromRemaingOctaves gameState),Pitch (batchTestStage gameState!!0) (getFromRemaingOctaves gameState)],gameState)
-      else ([Pitch (batchTestStage gameState!!0) (getFromRemaingOctaves gameState),Pitch (batchTestStage gameState!!1)
-          (getFromRemaingOctaves gameState),Pitch (batchTestStage gameState!!0) (getFromRemaingOctaves gameState)],gameState)
+      then ([Pitch (batchTestStage gameState!!0) (getFromRemainingOctaves gameState),Pitch (batchTestStage gameState!!0)
+            (getFromRemainingOctaves gameState),Pitch (batchTestStage gameState!!0) (getFromRemainingOctaves gameState)],gameState)
+      else ([Pitch (batchTestStage gameState!!0) (getFromRemainingOctaves gameState),Pitch (batchTestStage gameState!!1)
+          (getFromRemainingOctaves gameState),Pitch (batchTestStage gameState!!0) (getFromRemainingOctaves gameState)],gameState)
     else
-    ([Pitch (singularTestStage gameState!!0) (getFromRemaingOctaves gameState),Pitch (singularTestStage gameState!!0)
-      (getFromRemaingOctaves gameState),Pitch (singularTestStage gameState!!0) (getFromRemaingOctaves gameState)], gameState)
+    ([Pitch ((singularTestStage gameState)!!0) (getFromRemainingOctaves gameState),Pitch ((singularTestStage gameState)!!0)
+      (getFromRemainingOctaves gameState),Pitch ((singularTestStage gameState)!!0) (getFromRemainingOctaves gameState)], gameState)
 
-getFromRemaingOctaves gameState =
+getFromRemainingOctaves gameState =
   if length(remainingOctaves gameState) == 0
   then O1
-  else (remainingOctaves gameState)!!0
+  else ((remainingOctaves gameState)!!0)
 
 
 
@@ -172,6 +175,18 @@ getOctaveFromChar char
   | char == '2' = O2
   | char == '3' = O3
 
+
+
+
+inters target [] count=
+  count
+inters target (x1:xs1) count=
+  if (elem x1 target)
+  then inters (delete x1 target) xs1 (count+1)
+  else inters target xs1 count
+
+
+
 feedback (x:xs) (x1:xs1) =
   feedback_helper (x:xs) (x1:xs1) (0,0,0)
 
@@ -179,7 +194,7 @@ feedback_helper [] [] x=
   x
 feedback_helper (x:xs) (x1:xs1) (pitch,note,octave)=
    let (l1,l2,equal_pitches) = pitches (sortBy sortPitch(x:xs)) (sortBy sortPitch(x1:xs1)) 0 in
-     (equal_pitches,(notes l1 l2),(octaves l1 l2))
+     (equal_pitches,notes l1 l2,octaves l1 l2)
 
 pitches [] [] equal_pitches =
   ([],[],equal_pitches)
@@ -189,10 +204,10 @@ pitches (x:xs) (x1:xs1) equal_pitches =
   else (x:xs,x1:xs1,equal_pitches)
 
 notes l1 l2  =
-    length (foldl1 Data.List.intersect [(getNotes l1), (getNotes l2)])
+    inters (getNotes l1) (getNotes l2) 0
 
 octaves l1 l2  =
-    length (foldl1 Data.List.intersect [(getOctaves l1), (getOctaves l2)])
+    inters (getOctaves l1) (getOctaves l2) 0
 
 sortPitch (Pitch note1 oct1) (Pitch note2 oct2)
   | note1 < note2 = LT
