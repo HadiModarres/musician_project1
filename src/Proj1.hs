@@ -5,6 +5,7 @@ module Proj1
     feedback,
     GameState,
     initialGuess,
+    test,
     nextGuess
     ) where
 
@@ -16,9 +17,28 @@ initialGuess :: ([Pitch],GameState)
 nextGuess :: ([Pitch],GameState) -> (Int,Int,Int) -> ([Pitch],GameState)
 
 data Pitch = Pitch Note Octave
-  deriving (Show,Eq)
+  deriving (Eq)
 
+data Note = A | B | C | D | E | F | G
+  deriving (Show,Eq,Ord)
+data Octave = O1 | O2 | O3
+  deriving (Eq,Ord)
 
+instance Show Octave where
+  show(x)=
+   if x == O1
+   then "1"
+   else if x== O2
+     then "2"
+   else "3"
+
+instance Show Pitch where
+  show (Pitch note octave) = (show note)++(show octave)
+
+test =
+--  show (Pitch A O3)
+--  pitchStrings  [Pitch A O1,Pitch D O3,Pitch A O2]
+  feedback  [Pitch A O1,Pitch D O3,Pitch A O2][Pitch C O3,Pitch A O1,Pitch D O3]
 --how guessing logic works: we have 3 stages in the game, first stage is the batch stage in which
 --we guess notes in batches to see if they exist in the target, after that they either get added to singular stage
 --or not. those that were added to singular test stage get test individually and the found notes are added to found notes
@@ -35,10 +55,6 @@ data GameState = GameState {
   octavePermutations :: [[Octave]]
 } deriving (Show)
 
-data Note = A | B | C | D | E | F | G
-  deriving (Show,Eq,Ord)
-data Octave = O1 | O2 | O3
-  deriving (Show,Eq,Ord)
 
 
 
@@ -172,17 +188,28 @@ feedback (x:xs) (x1:xs1) =
 feedback_helper [] [] x=
   x
 feedback_helper (x:xs) (x1:xs1) (pitch,note,octave)=
-   let (l1,l2,equal_pitches) = pitches (sortBy sortPitch(x:xs)) (sortBy sortPitch(x1:xs1)) 0 in
-     (equal_pitches,notes l1 l2,octaves l1 l2)
+     let pitchInterset = pitches (x:xs) (x1:xs1)
+         l1 = removeFrom (x:xs) (inters2 (x:xs) (x1:xs1) [])
+         l2 = removeFrom (x1:xs1) (inters2 (x:xs) (x1:xs1) [])
+     in
+     (pitches (x:xs) (x1:xs1) ,notes l1 l2 ,octaves l1 l2)
 
-pitches [] [] equal_pitches =
-  ([],[],equal_pitches)
+removeFrom list [] =
+  list
+removeFrom list (x:xs)=
+  removeFrom(remove x list) xs
+
+pitchStrings []=
+  []
+pitchStrings (x:xs) =
+  (show x) : (pitchStrings xs)
+
+--pitches [] [] equal_pitches =
+--  ([],[],equal_pitches)
 
 -- gives number of equal pitches in two array of pitches, and only returns remaining array that pitches werent equal
-pitches (x:xs) (x1:xs1) equal_pitches =
-  if x == x1
-  then pitches xs xs1 (equal_pitches+1)
-  else (x:xs,x1:xs1,equal_pitches)
+pitches l1 l2  =
+    inters (pitchStrings l1) (pitchStrings l2) 0
 
 notes l1 l2  =
     inters (getNotes l1) (getNotes l2) 0
@@ -192,12 +219,19 @@ octaves l1 l2  =
 
 inters target [] count=
   count
--- intersection of two arrays with a twist: an element should be repeated for example twice in both arrays to appear
+-- intersection of two arrays in such a way that an element should be repeated for example twice in both arrays to appear
 -- twice in the resulting array. e.g. inters [A,C,C] [C,D] = [C]
 inters target (x1:xs1) count=
   if (elem x1 target)
   then inters (delete x1 target) xs1 (count+1)
   else inters target xs1 count
+
+inters2 target [] result=
+  result
+inters2 target (x1:xs1) result =
+  if (elem x1 target)
+  then inters2 (delete x1 target) xs1 (x1:result)
+  else inters2 target xs1 result
 -- end feedback
 
 
