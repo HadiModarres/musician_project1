@@ -38,7 +38,8 @@ instance Show Pitch where
 test =
 --  show (Pitch A O3)
 --  pitchStrings  [Pitch A O1,Pitch D O3,Pitch A O2]
-  feedback  [Pitch A O1,Pitch D O3,Pitch A O2][Pitch C O3,Pitch A O1,Pitch D O3]
+  feedback  [Pitch A O1,Pitch A O1,Pitch A O1][Pitch A O1,Pitch A O1,Pitch A O3]
+--  removeFrom [Pitch A O1,Pitch A O1,Pitch A O1] [Pitch A O1,Pitch A O1]--  notes [Pitch A O1] [Pitch A O3]
 --how guessing logic works: we have 3 stages in the game, first stage is the batch stage in which
 --we guess notes in batches to see if they exist in the target, after that they either get added to singular stage
 --or not. those that were added to singular test stage get test individually and the found notes are added to found notes
@@ -192,12 +193,12 @@ feedback_helper (x:xs) (x1:xs1) (pitch,note,octave)=
          l1 = removeFrom (x:xs) (inters2 (x:xs) (x1:xs1) [])
          l2 = removeFrom (x1:xs1) (inters2 (x:xs) (x1:xs1) [])
      in
-     (pitches (x:xs) (x1:xs1) ,notes l1 l2 ,octaves l1 l2)
+     (pitchInterset,notes l1 l2 ,octaves l1 l2)
 
 removeFrom list [] =
   list
 removeFrom list (x:xs)=
-  removeFrom(remove x list) xs
+  removeFrom(delete x list) xs
 
 pitchStrings []=
   []
