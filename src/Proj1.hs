@@ -11,6 +11,7 @@ module Proj1
     ) where
 
 import Data.List
+import Debug.Trace
 
 toPitch :: String -> Maybe Pitch
 feedback ::[Pitch] -> [Pitch] -> (Int,Int,Int)
@@ -77,9 +78,9 @@ nextGuess (x:xs, beforeGameState) (correctPitches,correctNotes,correctOcts) =
 
 updateState (x:xs, gameState) (correctPitches,correctNotes,correctOcts)=
 
-  if ((length (foundNotes gameState) == 3)&&(length (foundOctaves gameState) == 3))
-  then GameState (isInBatchTestStage gameState) (batchTestStage gameState) (singularTestStage gameState)
-                  (foundNotes gameState) (remainingOctaves gameState) (foundOctaves gameState) (permutations (foundOctaves gameState))
+  if (length (foundNotes gameState) == 3 && length (foundOctaves gameState) == 3)
+  then
+      gameState
   else
       if isInBatchTestStage gameState
       then
@@ -88,29 +89,33 @@ updateState (x:xs, gameState) (correctPitches,correctNotes,correctOcts)=
           let newArr = filterNotes (batchTestStage gameState) (getNotes (x:xs)) in
             if length newArr == 0
             then (GameState False newArr (singularTestStage gameState) (foundNotes gameState) (remove (getOctaves(x:xs)!!0)
-                            (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) [])
+                            (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) (octavePermutations gameState))
             else (GameState True newArr (singularTestStage gameState) (foundNotes gameState) (remove (getOctaves(x:xs)!!0)
-                            (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) [])
+                            (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) (octavePermutations gameState))
         else -- update state -> remove notes from batch array and add to singular stage, if empty batch array change stage
           let newArr = filterNotes (batchTestStage gameState)(getNotes (x:xs)) in
             if length newArr == 0
             then (GameState False [] (nub((getNotes (x:xs))++(singularTestStage gameState))) (foundNotes gameState) (remove (getOctaves(x:xs)!!0)
-                            (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) [])
+                            (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) (octavePermutations gameState))
             else (GameState True newArr (nub((getNotes (x:xs))++(singularTestStage gameState))) (foundNotes gameState) (remove (getOctaves(x:xs)!!0)
-                            (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) [])
+                            (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) (octavePermutations gameState))
       else
         if (correctPitches ==0 && correctNotes ==0 )
-        then GameState False [] (filterNotes (singularTestStage gameState) (getNotes (x:xs))) (foundNotes gameState) (remove (getOctaves(x:xs)!!0)
-                            (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) []-- remove from singular array
-        else GameState False [] (filterNotes (singularTestStage gameState) (getNotes (x:xs))) (addElementThisTimes (getNotes(x:xs)!!0) (foundNotes gameState) (correctNotes+correctPitches)) (remove (getOctaves(x:xs)!!0)
-                            (remainingOctaves gameState)) (addToListWithCap (getOctaves(x:xs)!!0) (foundOctaves gameState) (correctPitches+correctOcts) 3) []-- remove from singular array add to found notes
+        then GameState False [] (filterNotes (singularTestStage gameState) (getNotes (x:xs))) (foundNotes gameState) (remainingOctaves gameState) (foundOctaves gameState) (octavePermutations gameState)-- remove from singular array
+        else
+          let newSing = (addElementThisTimes (getNotes(x:xs)!!0) (foundNotes gameState) (correctNotes+correctPitches)) in
+          if length newSing == 3
+          then
+            GameState False [] (filterNotes (singularTestStage gameState) (getNotes (x:xs))) newSing (remainingOctaves gameState) (foundOctaves gameState) (permutations (foundOctaves gameState))-- remove from singular array add to found notes
+          else
+            GameState False [] (filterNotes (singularTestStage gameState) (getNotes (x:xs))) newSing (remainingOctaves gameState) (foundOctaves gameState) (octavePermutations gameState)-- remove from singular array add to found notes
 
 getGuessForState gameState =
   if ((length (foundNotes gameState) == 3)&&(length (foundOctaves gameState) == 3))
   then
     let x:xs = (octavePermutations gameState) in
-    ([Pitch ((foundNotes gameState)!!0) (x!!0),Pitch ((foundNotes gameState)!!0) (x!!1), Pitch ((foundNotes gameState)!!0) (x!!2)],
-    GameState (isInBatchTestStage gameState) (batchTestStage gameState) (singularTestStage gameState)
+      ([Pitch ((foundNotes gameState)!!0) (x!!0),Pitch ((foundNotes gameState)!!1) (x!!1), Pitch ((foundNotes gameState)!!2) (x!!2)],
+      GameState (isInBatchTestStage gameState) (batchTestStage gameState) (singularTestStage gameState)
                   (foundNotes gameState) (remainingOctaves gameState) (foundOctaves gameState) xs)
   else
     if  (isInBatchTestStage gameState)
