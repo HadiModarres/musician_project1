@@ -43,12 +43,12 @@ test =
 --    feedback [Pitch A O1,Pitch C O3,Pitch G O2] [Pitch A O1,Pitch B O1,Pitch A O1]
 --    nextGuess ([Pitch A O1,Pitch B O1,Pitch A O1],GameState True [A,B,C,D,E,F,G] [] [] [O1,O2,O3] []) (1,0,0)
 --  permutations [O1,O1,O2]
-   feedback ( [(Pitch B O2),(Pitch B O2),(Pitch B O2)]) ([(Pitch A O1),(Pitch B O1),(Pitch A O1)])
+--   feedback ( [(Pitch A O3),(Pitch B O2),(Pitch C O1)]) ([(Pitch C O3),(Pitch A O2),(Pitch B O1)])
 --  inters (sort [B,B,B]) (sort[A,A,B]) 0
 
 --    inters [D,D,D] [C,D,C]  0
 --    getNotes [(Pitch C O2),(Pitch B O1),(Pitch A O3),(Pitch A O1)]
---    toPitch "R1"
+    toPitch "G5"
 --    isInBatchTestStage (GameState True [] [] [])
 --  getGuessForState(GameState True [B,G] [B,C,D] [] [] [O1,O1,O2] [[O1,O1,O2]])
 
@@ -156,16 +156,11 @@ addElementThisTimes element list count=
 
 
 
-
-
-
-
-
-
 toPitch pitchString
     | (length pitchString /= 2) = Nothing
+    | elem (pitchString!!0) ['A','B','C','D','E','F','G'] == False = Nothing
+    | elem (pitchString!!1) ['1','2','3'] == False = Nothing
     | otherwise = Just (Pitch (getNoteFromChar (pitchString !! 0)) (getOctaveFromChar (pitchString !! 1)))
---    todo handle bad characters
 
 getNoteFromChar char
     | char == 'A' = A
