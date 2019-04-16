@@ -1,32 +1,29 @@
 module Proj1
-    ( someFunc,
+    (
     Pitch,
     toPitch,
     feedback,
-    test,
     GameState,
---    getNotes,
     initialGuess,
     nextGuess
     ) where
 
 import Data.List
-import Debug.Trace
 
 toPitch :: String -> Maybe Pitch
 feedback ::[Pitch] -> [Pitch] -> (Int,Int,Int)
 initialGuess :: ([Pitch],GameState)
 nextGuess :: ([Pitch],GameState) -> (Int,Int,Int) -> ([Pitch],GameState)
 
-data Note = A | B | C | D | E | F | G
-  deriving (Show,Eq,Ord)
-data Octave = O1 | O2 | O3
-  deriving (Show,Eq,Ord)
-
 data Pitch = Pitch Note Octave
   deriving (Show,Eq)
 
-data Stage = Stage1 | Stage2
+
+--how guessing logic works: we have 3 stages in the game, first stage is the batch stage in which
+--we guess notes in batches to see if they exist in the target, after that they either get added to singular stage
+--or not. those that were added to singular test stage get test individually and the found notes are added to found notes
+--octaves are test in 3 steps separately. when we find 3 correct notes and 3 correct octaves we try different permutations
+--until we find the correct chord
 
 data GameState = GameState {
   isInBatchTestStage :: Bool,
@@ -38,32 +35,12 @@ data GameState = GameState {
   octavePermutations :: [[Octave]]
 } deriving (Show)
 
+data Note = A | B | C | D | E | F | G
+  deriving (Show,Eq,Ord)
+data Octave = O1 | O2 | O3
+  deriving (Show,Eq,Ord)
 
-test =
---    feedback [Pitch A O1,Pitch C O3,Pitch G O2] [Pitch A O1,Pitch B O1,Pitch A O1]
---    nextGuess ([Pitch A O1,Pitch B O1,Pitch A O1],GameState True [A,B,C,D,E,F,G] [] [] [O1,O2,O3] []) (1,0,0)
---  permutations [O1,O1,O2]
---   feedback ( [(Pitch A O3),(Pitch B O2),(Pitch C O1)]) ([(Pitch C O3),(Pitch A O2),(Pitch B O1)])
---  inters (sort [B,B,B]) (sort[A,A,B]) 0
 
---    inters [D,D,D] [C,D,C]  0
---    getNotes [(Pitch C O2),(Pitch B O1),(Pitch A O3),(Pitch A O1)]
-    toPitch "G5"
---    isInBatchTestStage (GameState True [] [] [])
---  getGuessForState(GameState True [B,G] [B,C,D] [] [] [O1,O1,O2] [[O1,O1,O2]])
-
---  addElementThisTimes (Pitch A O2) [Pitch B O3] 10
---    filterArray [Pitch A O1,Pitch C O2,Pitch B O1, Pitch A O3] [A,B]
---  filterNotes [A,B,C] [A,B]
---  updateState ([Pitch B O1,Pitch B O1,Pitch B O1],GameState False [] [A,B] [] [] [O1,O3,O2] []) (0,2,1)
---  getFromRemaingOctaves (GameState True [] [] [] [] [])
---  addToListWithCap O1 [O2,O3,O3] 2 3
-
-filterArray array notes = --tested
-  filter (\(Pitch note oct) -> (elem note notes)) array
-
-filterNotes array notes =
-  filter (\note -> not(elem note notes)) array
 
 
 initialGuess =
@@ -76,6 +53,7 @@ nextGuess (x:xs, beforeGameState) (correctPitches,correctNotes,correctOcts) =
 
 
 
+-- updates the state of the game according to the feedback received
 updateState (x:xs, gameState) (correctPitches,correctNotes,correctOcts)=
 
   if (length (foundNotes gameState) == 3 && length (foundOctaves gameState) == 3)
@@ -110,6 +88,8 @@ updateState (x:xs, gameState) (correctPitches,correctNotes,correctOcts)=
           else
             GameState False [] (filterNotes (singularTestStage gameState) (getNotes (x:xs))) newSing (remainingOctaves gameState) (foundOctaves gameState) (octavePermutations gameState)-- remove from singular array add to found notes
 
+
+-- given a gameState returns the best next guess
 getGuessForState gameState =
   if ((length (foundNotes gameState) == 3)&&(length (foundOctaves gameState) == 3))
   then
@@ -139,6 +119,7 @@ getFromRemainingOctaves gameState =
 remove element list = filter (\e -> e/=element) list
 
 
+-- adds element to the list a number of times - if resulting list is at 'cap' length it stops adding
 addToListWithCap element list 0 cap =
   list
 addToListWithCap element list count cap=
@@ -148,7 +129,7 @@ addToListWithCap element list count cap=
 
 
 
-
+-- adds the element a number of times to the target list
 addElementThisTimes element list 0 =
   list
 addElementThisTimes element list count=
@@ -156,6 +137,7 @@ addElementThisTimes element list count=
 
 
 
+-- toPitch
 toPitch pitchString
     | (length pitchString /= 2) = Nothing
     | elem (pitchString!!0) ['A','B','C','D','E','F','G'] == False = Nothing
@@ -174,22 +156,19 @@ getOctaveFromChar char
   | char == '1' = O1
   | char == '2' = O2
   | char == '3' = O3
+-- toPitch end
 
 
 
 
-inters target [] count=
-  count
-inters target (x1:xs1) count=
-  if (elem x1 target)
-  then inters (delete x1 target) xs1 (count+1)
-  else inters target xs1 count
 
-
-
+-- feedback
 feedback (x:xs) (x1:xs1) =
   feedback_helper (x:xs) (x1:xs1) (0,0,0)
 
+
+-- first sort according to both notes and octaves and find number of equal pitches
+-- after that use the intersection function to find number of common notes and octaves from the remaining array
 feedback_helper [] [] x=
   x
 feedback_helper (x:xs) (x1:xs1) (pitch,note,octave)=
@@ -198,6 +177,8 @@ feedback_helper (x:xs) (x1:xs1) (pitch,note,octave)=
 
 pitches [] [] equal_pitches =
   ([],[],equal_pitches)
+
+-- gives number of equal pitches in two array of pitches, and only returns remaining array that pitches werent equal
 pitches (x:xs) (x1:xs1) equal_pitches =
   if x == x1
   then pitches xs xs1 (equal_pitches+1)
@@ -209,29 +190,45 @@ notes l1 l2  =
 octaves l1 l2  =
     inters (getOctaves l1) (getOctaves l2) 0
 
+inters target [] count=
+  count
+-- intersection of two arrays with a twist: an element should be repeated for example twice in both arrays to appear
+-- twice in the resulting array. e.g. inters [A,C,C] [C,D] = [C]
+inters target (x1:xs1) count=
+  if (elem x1 target)
+  then inters (delete x1 target) xs1 (count+1)
+  else inters target xs1 count
+-- end feedback
+
+
+
+
+-- function to compare two pitches
 sortPitch (Pitch note1 oct1) (Pitch note2 oct2)
   | note1 < note2 = LT
   | note1 > note2 = GT
   | note1 == note2 = compare oct1 oct2
 
 
+
+-- gets array of notes for the given note array
 getNotes [] =
   []
 getNotes ((Pitch note octave):xs) =
   note:(getNotes xs)
 
---getNotesFromFeedback (feedbackPitches,feedbackNotes,feedbackOcts)=
 
 
+--gets array of octaves for the given pitch array
 getOctaves [] =
   []
 getOctaves ((Pitch note octave):xs) =
   octave:(getOctaves xs)
 
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
-
+-- filters notes in first array by using the notes in the second array
+filterNotes array notes =
+  filter (\note -> not(elem note notes)) array
 
 
 
