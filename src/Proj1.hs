@@ -5,11 +5,11 @@ module Proj1
     feedback,
     GameState,
     initialGuess,
-    test,
     nextGuess
     ) where
 
 import Data.List
+-- final
 
 toPitch :: String -> Maybe Pitch
 feedback ::[Pitch] -> [Pitch] -> (Int,Int,Int)
@@ -35,11 +35,6 @@ instance Show Octave where
 instance Show Pitch where
   show (Pitch note octave) = (show note)++(show octave)
 
-test =
---  show (Pitch A O3)
---  pitchStrings  [Pitch A O1,Pitch D O3,Pitch A O2]
-  feedback  [Pitch A O1,Pitch A O1,Pitch A O1][Pitch A O1,Pitch A O1,Pitch A O3]
---  removeFrom [Pitch A O1,Pitch A O1,Pitch A O1] [Pitch A O1,Pitch A O1]--  notes [Pitch A O1] [Pitch A O3]
 --how guessing logic works: we have 3 stages in the game, first stage is the batch stage in which
 --we guess notes in batches to see if they exist in the target, after that they either get added to singular stage
 --or not. those that were added to singular test stage get test individually and the found notes are added to found notes
@@ -58,10 +53,8 @@ data GameState = GameState {
 
 
 
-
-
 initialGuess =
-    ([Pitch A O1,Pitch B O1,Pitch A O1],GameState True [A,B,C,D,E,F] [G] [] [O1,O2,O3] [] [])
+    ([Pitch A O1,Pitch B O1,Pitch C O1],GameState True [A,B,C,D,E,F,G] [] [] [O1,O2,O3] [] [])
 
 nextGuess (x:xs, beforeGameState) (correctPitches,correctNotes,correctOcts) =
    getGuessForState (updateState (x:xs,beforeGameState)(correctPitches,correctNotes,correctOcts))
@@ -118,19 +111,19 @@ getGuessForState gameState =
     if  (isInBatchTestStage gameState)
     then
       if length(batchTestStage gameState) == 1
-      then ([Pitch (batchTestStage gameState!!0) (getFromRemainingOctaves gameState),Pitch (batchTestStage gameState!!0)
-            (getFromRemainingOctaves gameState),Pitch (batchTestStage gameState!!0) (getFromRemainingOctaves gameState)],gameState)
-      else ([Pitch (batchTestStage gameState!!0) (getFromRemainingOctaves gameState),Pitch (batchTestStage gameState!!1)
-          (getFromRemainingOctaves gameState),Pitch (batchTestStage gameState!!0) (getFromRemainingOctaves gameState)],gameState)
+      then ([Pitch A O3,Pitch B
+            O3,Pitch (batchTestStage gameState!!0) O3],gameState)
+      else ([Pitch (batchTestStage gameState!!0) ((getFromRemainingOctaves gameState)!!0),Pitch (batchTestStage gameState!!1)
+          ((getFromRemainingOctaves gameState)!!1),Pitch (batchTestStage gameState!!2) ((getFromRemainingOctaves gameState)!!2)],gameState)
     else
-    ([Pitch ((singularTestStage gameState)!!0) (getFromRemainingOctaves gameState),Pitch ((singularTestStage gameState)!!0)
-      (getFromRemainingOctaves gameState),Pitch ((singularTestStage gameState)!!0) (getFromRemainingOctaves gameState)], gameState)
+    ([Pitch ((singularTestStage gameState)!!0) ((getFromRemainingOctaves gameState)!!0),Pitch ((singularTestStage gameState)!!0)
+      ((getFromRemainingOctaves gameState)!!1),Pitch ((singularTestStage gameState)!!0) ((getFromRemainingOctaves gameState)!!2)], gameState)
 
+--returns the octave remaining that need to be tested
 getFromRemainingOctaves gameState =
   if length(remainingOctaves gameState) == 0
-  then O1
-  else ((remainingOctaves gameState)!!0)
-
+  then [O1,O2,O3]
+  else [((remainingOctaves gameState)!!0), ((remainingOctaves gameState)!!0),((remainingOctaves gameState)!!0)]
 
 
 remove element list = filter (\e -> e/=element) list
@@ -208,19 +201,21 @@ pitchStrings (x:xs) =
 --pitches [] [] equal_pitches =
 --  ([],[],equal_pitches)
 
--- gives number of equal pitches in two array of pitches, and only returns remaining array that pitches werent equal
+-- gives number of equal pitches in two array of pitches
 pitches l1 l2  =
     inters (pitchStrings l1) (pitchStrings l2) 0
 
+-- gives number of equal notes
 notes l1 l2  =
     inters (getNotes l1) (getNotes l2) 0
 
+--gives number of equal octaves
 octaves l1 l2  =
     inters (getOctaves l1) (getOctaves l2) 0
 
 inters target [] count=
   count
--- intersection of two arrays in such a way that an element should be repeated for example twice in both arrays to appear
+-- count of intersection of two arrays in such a way that an element should be repeated for example twice in both arrays to appear
 -- twice in the resulting array. e.g. inters [A,C,C] [C,D] = [C]
 inters target (x1:xs1) count=
   if (elem x1 target)
